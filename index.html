@@ -322,7 +322,7 @@
       <line x1="8" y1="23" x2="16" y2="23"/>
     </svg>
   </button>
-  <div class="mode-label" id="modeLabel">Alternating: EN → VI → EN...</div>
+  <div class="mode-label" id="modeLabel">Dual: EN + VI simultaneously</div>
   <div class="settings-row">
     <div class="toggle active" id="ttsToggle" onclick="toggleTTS()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
@@ -355,12 +355,11 @@ let isRunning = false;
 let ttsEnabled = true;
 let autoScroll = true;
 let volume = 1.0;
-let currentLang = 'en'; // Tracks which language we're currently listening for
-let recognizer = null;
+let enRecognizer = null;
+let viRecognizer = null;
 let translateQueue = Promise.resolve();
-let silenceTimer = null;
-let lastSpeechTime = 0;
-const SILENCE_SWITCH_MS = 2500; // Switch language after 2.5s of silence
+let enLastFinal = '';
+let viLastFinal = '';
 
 // ===== ELEMENTS =====
 const $mainBtn = document.getElementById('mainBtn');
@@ -382,32 +381,6 @@ if (!SpeechRecognition) {
 document.getElementById('volumeSlider').addEventListener('input', e => {
   volume = parseFloat(e.target.value);
 });
-
-// ===== LANGUAGE DETECTION =====
-// Vietnamese character patterns — if text contains these, it's Vietnamese
-const VI_CHARS = /[àáảãạâấầẩẫậăắằẳẵặèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđÀÁẢÃẠÂẤẦẨẪẬĂẮẰẲẴẶÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴĐ]/;
-
-function detectLang(text) {
-  if (VI_CHARS.test(text)) return 'vi';
-  return 'en';
-}
-
-function updateLangUI(lang) {
-  $langDetect.textContent = lang === 'en' ? '🎤 Listening for English...' : '🎤 Đang nghe tiếng Việt...';
-  $langDetect.className = 'detected ' + lang;
-
-  if (lang === 'en') {
-    $enDot.classList.add('listening');
-    $enWave.classList.add('active');
-    $viDot.classList.remove('listening');
-    $viWave.classList.remove('active');
-  } else {
-    $viDot.classList.add('listening');
-    $viWave.classList.add('active');
-    $enDot.classList.remove('listening');
-    $enWave.classList.remove('active');
-  }
-}
 
 // ===== TRANSLATION =====
 async function translate(text, from, to) {
@@ -473,25 +446,17 @@ function clearInterim(panel) {
   if (interim) interim.remove();
 }
 
-// ===== RECOGNIZER (SINGLE, ALTERNATING) =====
-function createAndStartRecognizer(lang) {
-  if (recognizer) {
-    try { recognizer.stop(); } catch(e) {}
-    recognizer = null;
-  }
-
+// ===== DUAL RECOGNIZER (BOTH LANGUAGES SIMULTANEOUSLY) =====
+function createRecognizer(lang, sourcePanel, targetPanel, targetLang, sourceLang) {
   const rec = new SpeechRecognition();
   rec.lang = lang === 'en' ? EN_LANG : VI_LANG;
   rec.continuous = true;
   rec.interimResults = true;
   rec.maxAlternatives = 1;
 
-  rec.onstart = () => {
-    updateLangUI(lang);
-  };
+  let lastFinal = '';
 
   rec.onresult = (event) => {
-    lastSpeechTime = Date.now();
     let interimText = '';
     let finalText = '';
     for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -503,52 +468,42 @@ function createAndStartRecognizer(lang) {
       }
     }
 
-    if (finalText.trim()) {
-      const detectedLang = detectLang(finalText.trim());
-      const activePanel = lang === 'en' ? $enPanel : $viPanel;
-      const targetPanel = lang === 'en' ? $viPanel : $enPanel;
-      const targetLang = lang === 'en' ? 'vi' : 'en';
+    if (finalText.trim() && finalText.trim() !== lastFinal) {
+      lastFinal = finalText.trim();
+      clearInterim(sourcePanel);
+      addMessage(sourcePanel, finalText.trim(), 'original');
 
-      clearInterim(activePanel);
-      addMessage(activePanel, finalText.trim(), 'original');
-
+      // Translate and speak
       translateQueue = translateQueue.then(async () => {
-        const translated = await translate(finalText.trim(), lang === 'en' ? 'en' : 'vi', targetLang === 'vi' ? 'vi' : 'en');
+        const translated = await translate(finalText.trim(), sourceLang, targetLang);
         addMessage(targetPanel, translated, 'translated');
         speak(translated, targetLang);
       });
 
-      // If we detected speech in the OTHER language, switch immediately
-      if (detectedLang !== lang) {
-        console.log('Language switch detected:', lang, '->', detectedLang);
-        clearTimeout(silenceTimer);
-        switchLanguage(detectedLang);
+      // Update detection badge
+      if (sourceLang === 'en') {
+        $langDetect.textContent = '🎤 English detected';
+        $langDetect.className = 'detected en';
+      } else {
+        $langDetect.textContent = '🎤 Tiếng Việt detected';
+        $langDetect.className = 'detected vi';
       }
+      clearTimeout(window._detectReset);
+      window._detectReset = setTimeout(() => {
+        $langDetect.textContent = '🎤 Listening for both...';
+        $langDetect.className = 'detected';
+      }, 3000);
     }
 
     if (interimText.trim()) {
-      const activePanel = lang === 'en' ? $enPanel : $viPanel;
-      showInterim(activePanel, interimText.trim());
+      showInterim(sourcePanel, interimText.trim());
     }
   };
 
   rec.onend = () => {
+    // Auto-restart if still running (browsers stop recognition periodically)
     if (isRunning) {
-      // Check if we should switch language due to silence
-      const now = Date.now();
-      const timeSinceSpeech = now - lastSpeechTime;
-      if (timeSinceSpeech > SILENCE_SWITCH_MS) {
-        // Switch to the other language
-        switchLanguage(lang === 'en' ? 'vi' : 'en');
-      } else {
-        // Same language, just restart
-        try { rec.start(); } catch(e) {}
-      }
-    } else {
-      $enDot.classList.remove('listening');
-      $viDot.classList.remove('listening');
-      $enWave.classList.remove('active');
-      $viWave.classList.remove('active');
+      try { rec.start(); } catch(e) {}
     }
   };
 
@@ -557,32 +512,40 @@ function createAndStartRecognizer(lang) {
       stopAll();
       alert('Microphone access denied. Please allow microphone access in your browser settings and reload.');
     }
-    if (e.error === 'aborted') return;
-    console.warn('SpeechRecognition error:', e.error);
+    if (e.error === 'aborted' || e.error === 'no-speech') return;
+    console.warn('SpeechRecognition error (' + lang + '):', e.error);
+    // Restart on error
+    if (isRunning) {
+      setTimeout(() => { try { rec.start(); } catch(e) {} }, 500);
+    }
   };
 
-  recognizer = rec;
-  try { rec.start(); } catch(e) { console.error('Start error:', e); }
-}
-
-function switchLanguage(newLang) {
-  if (!isRunning) return;
-  clearTimeout(silenceTimer);
-  currentLang = newLang;
-  clearInterim($enPanel);
-  clearInterim($viPanel);
-  $modeLabel.textContent = newLang === 'en' ? 'Listening: English → Tiếng Việt' : 'Đang nghe: Tiếng Việt → English';
-  createAndStartRecognizer(newLang);
+  return rec;
 }
 
 // ===== START / STOP =====
 function startAll() {
   isRunning = true;
   $mainBtn.classList.add('active');
-  lastSpeechTime = Date.now();
-  currentLang = 'en';
-  $modeLabel.textContent = 'Listening: English → Tiếng Việt';
-  createAndStartRecognizer('en');
+  enLastFinal = '';
+  viLastFinal = '';
+
+  // Show both dots as listening
+  $enDot.classList.add('listening');
+  $viDot.classList.add('listening');
+  $enWave.classList.add('active');
+  $viWave.classList.add('active');
+  $langDetect.textContent = '🎤 Listening for both...';
+  $langDetect.className = 'detected';
+  $modeLabel.textContent = 'Dual: EN + VI simultaneously';
+
+  // Start English recognizer
+  enRecognizer = createRecognizer('en', $enPanel, $viPanel, 'vi', 'en');
+  try { enRecognizer.start(); } catch(e) { console.error('EN start error:', e); }
+
+  // Start Vietnamese recognizer
+  viRecognizer = createRecognizer('vi', $viPanel, $enPanel, 'en', 'vi');
+  try { viRecognizer.start(); } catch(e) { console.error('VI start error:', e); }
 }
 
 function stopAll() {
@@ -592,14 +555,15 @@ function stopAll() {
   $viDot.classList.remove('listening');
   $enWave.classList.remove('active');
   $viWave.classList.remove('active');
-  clearTimeout(silenceTimer);
-  if (recognizer) { try { recognizer.stop(); } catch(e) {} recognizer = null; }
+  if (enRecognizer) { try { enRecognizer.stop(); } catch(e) {} enRecognizer = null; }
+  if (viRecognizer) { try { viRecognizer.stop(); } catch(e) {} viRecognizer = null; }
   window.speechSynthesis.cancel();
+  clearTimeout(window._detectReset);
   clearInterim($enPanel);
   clearInterim($viPanel);
   $langDetect.textContent = 'Tap mic to start';
   $langDetect.className = 'detected';
-  $modeLabel.textContent = 'Alternating: EN → VI → EN...';
+  $modeLabel.textContent = 'Dual: EN + VI simultaneously';
 }
 
 $mainBtn.addEventListener('click', () => {
