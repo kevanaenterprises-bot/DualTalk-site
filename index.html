@@ -416,16 +416,22 @@ async function translate(text, from, to) {
 // ===== TTS =====
 function speak(text, lang) {
   if (!ttsEnabled || !text) return;
-  window.speechSynthesis.cancel();
+  // Don't cancel — Chrome bug: cancel() right before speak() drops the utterance
+  // Instead let it queue naturally
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = lang === 'vi' ? 'vi-VN' : 'en-US';
   utter.rate = 0.95;
   utter.pitch = 1;
   utter.volume = volume;
+  // Try to find a matching voice (may be empty on first call)
   const voices = window.speechSynthesis.getVoices();
-  const code = lang === 'vi' ? 'vi' : 'en';
-  const match = voices.find(v => v.lang.startsWith(code));
-  if (match) utter.voice = match;
+  if (voices.length > 0) {
+    const code = lang === 'vi' ? 'vi' : 'en';
+    const match = voices.find(v => v.lang.startsWith(code));
+    if (match) utter.voice = match;
+  }
+  // Chrome workaround: resume if suspended after inactivity
+  window.speechSynthesis.resume();
   window.speechSynthesis.speak(utter);
 }
 
