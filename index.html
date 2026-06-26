@@ -48,6 +48,17 @@
     color: var(--muted);
     margin-top: 2px;
   }
+  .header .detected {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #334155;
+    color: var(--muted);
+  }
+  .header .detected.en { background: var(--en-bg); color: var(--en-accent); }
+  .header .detected.vi { background: var(--vi-bg); color: var(--vi-accent); }
 
   /* Status bar */
   .status-bar {
@@ -92,7 +103,6 @@
     overflow: hidden;
     min-height: 0;
   }
-
   .panel {
     flex: 1;
     border-radius: 16px;
@@ -101,18 +111,9 @@
     flex-direction: column;
     overflow: hidden;
     min-height: 0;
-    position: relative;
   }
-  .panel.en {
-    background: var(--en-bg);
-    border: 1px solid var(--en-border);
-    color: #1E3A5F;
-  }
-  .panel.vi {
-    background: var(--vi-bg);
-    border: 1px solid var(--vi-border);
-    color: #7F1D1D;
-  }
+  .panel.en { background: var(--en-bg); border: 1px solid var(--en-border); color: #1E3A5F; }
+  .panel.vi { background: var(--vi-bg); border: 1px solid var(--vi-border); color: #7F1D1D; }
   .panel-label {
     font-size: 10px;
     font-weight: 700;
@@ -133,7 +134,6 @@
   }
   .panel-messages::-webkit-scrollbar { width: 3px; }
   .panel-messages::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 3px; }
-
   .msg {
     padding: 8px 10px;
     border-radius: 12px;
@@ -146,22 +146,11 @@
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .msg.original {
-    background: rgba(255,255,255,0.7);
-    font-weight: 500;
-  }
-  .msg.translated {
-    background: rgba(0,0,0,0.06);
-    font-size: 13px;
-    font-style: italic;
-    opacity: 0.85;
-  }
-  .msg.interim {
-    opacity: 0.5;
-    font-style: italic;
-  }
+  .msg.original { background: rgba(255,255,255,0.7); font-weight: 500; }
+  .msg.translated { background: rgba(0,0,0,0.06); font-size: 13px; font-style: italic; opacity: 0.85; }
+  .msg.interim { opacity: 0.5; font-style: italic; }
 
-  /* Live waveform indicator */
+  /* Listening indicator */
   .listening-indicator {
     display: none;
     align-items: center;
@@ -173,9 +162,7 @@
   .listening-indicator.en .bar { background: var(--en-accent); }
   .listening-indicator.vi .bar { background: var(--vi-accent); }
   .bar {
-    width: 3px;
-    border-radius: 2px;
-    height: 12px;
+    width: 3px; border-radius: 2px; height: 12px;
     animation: barPulse 0.6s ease-in-out infinite alternate;
   }
   .bar:nth-child(1) { animation-delay: 0s; }
@@ -183,10 +170,7 @@
   .bar:nth-child(3) { animation-delay: 0.2s; }
   .bar:nth-child(4) { animation-delay: 0.3s; }
   .bar:nth-child(5) { animation-delay: 0.4s; }
-  @keyframes barPulse {
-    from { height: 4px; }
-    to { height: 16px; }
-  }
+  @keyframes barPulse { from { height: 4px; } to { height: 16px; } }
 
   /* Controls */
   .controls {
@@ -197,7 +181,6 @@
     gap: 10px;
     align-items: center;
   }
-
   .big-btn {
     width: 72px; height: 72px;
     border-radius: 50%;
@@ -218,7 +201,6 @@
     background: #166534;
     box-shadow: 0 0 20px rgba(34,197,94,0.3);
   }
-
   .settings-row {
     display: flex;
     gap: 8px;
@@ -238,14 +220,8 @@
     transition: all 0.2s;
     -webkit-tap-highlight-color: transparent;
   }
-  .toggle.active {
-    border-color: var(--en-accent);
-    color: var(--en-accent);
-    background: rgba(59,130,246,0.1);
-  }
+  .toggle.active { border-color: var(--en-accent); color: var(--en-accent); background: rgba(59,130,246,0.1); }
   .toggle svg { width: 14px; height: 14px; }
-
-  /* Volume slider */
   .volume-row {
     display: flex;
     align-items: center;
@@ -269,6 +245,11 @@
     background: var(--en-accent);
     cursor: pointer;
   }
+  .mode-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
 
   /* Unsupported banner */
   .unsupported {
@@ -285,7 +266,6 @@
   .unsupported h2 { font-size: 20px; margin-bottom: 12px; }
   .unsupported p { font-size: 14px; color: var(--muted); max-width: 300px; line-height: 1.6; }
 
-  /* Landscape mode hint */
   @media (orientation: landscape) and (max-height: 500px) {
     .panels { flex-direction: row; }
     .panel { min-width: 0; }
@@ -296,12 +276,13 @@
 
 <div class="unsupported" id="unsupported">
   <h2>Browser Not Supported</h2>
-  <p>This app needs Chrome, Edge, or Safari. Please open this page in a supported browser.</p>
+  <p>This app needs Chrome, Edge, or Safari on HTTPS. Please open in a supported browser.</p>
 </div>
 
 <div class="header">
   <h1>DualTalk</h1>
   <p>Real-time Vietnamese ↔ English translation</p>
+  <div class="detected" id="langDetect">Tap mic to start</div>
 </div>
 
 <div class="status-bar">
@@ -316,7 +297,6 @@
 </div>
 
 <div class="panels">
-  <!-- English Panel -->
   <div class="panel en">
     <div class="panel-label">English</div>
     <div class="listening-indicator en" id="enWave">
@@ -324,7 +304,6 @@
     </div>
     <div class="panel-messages" id="enMessages"></div>
   </div>
-  <!-- Vietnamese Panel -->
   <div class="panel vi">
     <div class="panel-label">Tiếng Việt</div>
     <div class="listening-indicator vi" id="viWave">
@@ -343,6 +322,7 @@
       <line x1="8" y1="23" x2="16" y2="23"/>
     </svg>
   </button>
+  <div class="mode-label" id="modeLabel">Alternating: EN → VI → EN...</div>
   <div class="settings-row">
     <div class="toggle active" id="ttsToggle" onclick="toggleTTS()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
@@ -375,11 +355,12 @@ let isRunning = false;
 let ttsEnabled = true;
 let autoScroll = true;
 let volume = 1.0;
-let enRecognizer = null;
-let viRecognizer = null;
-let enMessages = [];
-let viMessages = [];
+let currentLang = 'en'; // Tracks which language we're currently listening for
+let recognizer = null;
 let translateQueue = Promise.resolve();
+let silenceTimer = null;
+let lastSpeechTime = 0;
+const SILENCE_SWITCH_MS = 2500; // Switch language after 2.5s of silence
 
 // ===== ELEMENTS =====
 const $mainBtn = document.getElementById('mainBtn');
@@ -389,6 +370,8 @@ const $enWave = document.getElementById('enWave');
 const $viWave = document.getElementById('viWave');
 const $enPanel = document.getElementById('enMessages');
 const $viPanel = document.getElementById('viMessages');
+const $langDetect = document.getElementById('langDetect');
+const $modeLabel = document.getElementById('modeLabel');
 
 // ===== INIT =====
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -396,62 +379,82 @@ if (!SpeechRecognition) {
   document.getElementById('unsupported').classList.add('show');
 }
 
-// Volume control
 document.getElementById('volumeSlider').addEventListener('input', e => {
   volume = parseFloat(e.target.value);
 });
 
-// ===== RECOGNIZER FACTORY =====
-function createRecognizer(lang, panel, dot, wave, onResult) {
-  const rec = new SpeechRecognition();
-  rec.lang = lang;
-  rec.continuous = true;
-  rec.interimResults = true;
-  rec.maxAlternatives = 1;
+// ===== LANGUAGE DETECTION =====
+// Vietnamese character patterns — if text contains these, it's Vietnamese
+const VI_CHARS = /[àáảãạâấầẩẫậăắằẳẵặèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđÀÁẢÃẠÂẤẦẨẪẬĂẮẰẲẴẶÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴĐ]/;
 
-  rec.onstart = () => {
-    dot.classList.add('listening');
-    wave.classList.add('active');
-  };
-  rec.onend = () => {
-    // Auto-restart if still running
-    if (isRunning) {
-      try { rec.start(); } catch(e) {}
-    } else {
-      dot.classList.remove('listening');
-      wave.classList.remove('active');
-    }
-  };
-  rec.onerror = (e) => {
-    if (e.error === 'not-allowed') {
-      stopAll();
-      alert('Microphone access denied. Please allow microphone access and try again.');
-    }
-    if (e.error === 'aborted') return;
-    console.warn('SpeechRecognition error:', e.error);
-  };
+function detectLang(text) {
+  if (VI_CHARS.test(text)) return 'vi';
+  return 'en';
+}
 
-  rec.onresult = (event) => {
-    let interimText = '';
-    let finalText = '';
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const transcript = event.results[i][0].transcript;
-      if (event.results[i].isFinal) {
-        finalText += transcript;
-      } else {
-        interimText += transcript;
-      }
-    }
-    if (finalText.trim()) {
-      onResult(finalText.trim());
-    }
-    // Show interim
-    if (interimText.trim()) {
-      showInterim(panel, interimText.trim());
-    }
-  };
+function updateLangUI(lang) {
+  $langDetect.textContent = lang === 'en' ? '🎤 Listening for English...' : '🎤 Đang nghe tiếng Việt...';
+  $langDetect.className = 'detected ' + lang;
 
-  return rec;
+  if (lang === 'en') {
+    $enDot.classList.add('listening');
+    $enWave.classList.add('active');
+    $viDot.classList.remove('listening');
+    $viWave.classList.remove('active');
+  } else {
+    $viDot.classList.add('listening');
+    $viWave.classList.add('active');
+    $enDot.classList.remove('listening');
+    $enWave.classList.remove('active');
+  }
+}
+
+// ===== TRANSLATION =====
+async function translate(text, from, to) {
+  const fromCode = from === 'en' ? 'en' : 'vi';
+  const toCode = to === 'en' ? 'en' : 'vi';
+  try {
+    const resp = await fetch(TRANSLATE_API + '?q=' + encodeURIComponent(text) + '&langpair=' + fromCode + '|' + toCode);
+    const data = await resp.json();
+    if (data.responseStatus === 200 && data.responseData) {
+      return data.responseData.translatedText;
+    }
+    return '[Translation error]';
+  } catch (e) {
+    console.error('Translation error:', e);
+    return '[Translation failed]';
+  }
+}
+
+// ===== TTS =====
+function speak(text, lang) {
+  if (!ttsEnabled || !text) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang === 'vi' ? 'vi-VN' : 'en-US';
+  utter.rate = 0.95;
+  utter.pitch = 1;
+  utter.volume = volume;
+  const voices = window.speechSynthesis.getVoices();
+  const code = lang === 'vi' ? 'vi' : 'en';
+  const match = voices.find(v => v.lang.startsWith(code));
+  if (match) utter.voice = match;
+  window.speechSynthesis.speak(utter);
+}
+
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  window.speechSynthesis.getVoices();
+}
+
+// ===== MESSAGE DISPLAY =====
+function addMessage(panel, text, type) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.textContent = text;
+  panel.appendChild(div);
+  if (autoScroll) panel.scrollTop = panel.scrollHeight;
+  while (panel.children.length > 50) panel.removeChild(panel.firstChild);
 }
 
 function showInterim(panel, text) {
@@ -470,94 +473,116 @@ function clearInterim(panel) {
   if (interim) interim.remove();
 }
 
-// ===== TRANSLATION =====
-async function translate(text, from, to) {
-  // Use en as source language code (not en-US)
-  const fromCode = from.startsWith('en') ? 'en' : from;
-  const toCode = to.startsWith('vi') ? 'vi' : to;
+// ===== RECOGNIZER (SINGLE, ALTERNATING) =====
+function createAndStartRecognizer(lang) {
+  if (recognizer) {
+    try { recognizer.stop(); } catch(e) {}
+    recognizer = null;
+  }
 
-  try {
-    const resp = await fetch(TRANSLATE_API + '?q=' + encodeURIComponent(text) + '&langpair=' + fromCode + '|' + toCode);
-    const data = await resp.json();
-    if (data.responseStatus === 200 && data.responseData) {
-      return data.responseData.translatedText;
+  const rec = new SpeechRecognition();
+  rec.lang = lang === 'en' ? EN_LANG : VI_LANG;
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+
+  rec.onstart = () => {
+    updateLangUI(lang);
+  };
+
+  rec.onresult = (event) => {
+    lastSpeechTime = Date.now();
+    let interimText = '';
+    let finalText = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalText += transcript;
+      } else {
+        interimText += transcript;
+      }
     }
-    return '[Translation error]';
-  } catch (e) {
-    console.error('Translation error:', e);
-    return '[Translation failed]';
-  }
+
+    if (finalText.trim()) {
+      const detectedLang = detectLang(finalText.trim());
+      const activePanel = lang === 'en' ? $enPanel : $viPanel;
+      const targetPanel = lang === 'en' ? $viPanel : $enPanel;
+      const targetLang = lang === 'en' ? 'vi' : 'en';
+
+      clearInterim(activePanel);
+      addMessage(activePanel, finalText.trim(), 'original');
+
+      translateQueue = translateQueue.then(async () => {
+        const translated = await translate(finalText.trim(), lang === 'en' ? 'en' : 'vi', targetLang === 'vi' ? 'vi' : 'en');
+        addMessage(targetPanel, translated, 'translated');
+        speak(translated, targetLang);
+      });
+
+      // If we detected speech in the OTHER language, switch immediately
+      if (detectedLang !== lang) {
+        console.log('Language switch detected:', lang, '->', detectedLang);
+        clearTimeout(silenceTimer);
+        switchLanguage(detectedLang);
+      }
+    }
+
+    if (interimText.trim()) {
+      const activePanel = lang === 'en' ? $enPanel : $viPanel;
+      showInterim(activePanel, interimText.trim());
+    }
+  };
+
+  rec.onend = () => {
+    if (isRunning) {
+      // Check if we should switch language due to silence
+      const now = Date.now();
+      const timeSinceSpeech = now - lastSpeechTime;
+      if (timeSinceSpeech > SILENCE_SWITCH_MS) {
+        // Switch to the other language
+        switchLanguage(lang === 'en' ? 'vi' : 'en');
+      } else {
+        // Same language, just restart
+        try { rec.start(); } catch(e) {}
+      }
+    } else {
+      $enDot.classList.remove('listening');
+      $viDot.classList.remove('listening');
+      $enWave.classList.remove('active');
+      $viWave.classList.remove('active');
+    }
+  };
+
+  rec.onerror = (e) => {
+    if (e.error === 'not-allowed') {
+      stopAll();
+      alert('Microphone access denied. Please allow microphone access in your browser settings and reload.');
+    }
+    if (e.error === 'aborted') return;
+    console.warn('SpeechRecognition error:', e.error);
+  };
+
+  recognizer = rec;
+  try { rec.start(); } catch(e) { console.error('Start error:', e); }
 }
 
-// ===== TTS =====
-function speak(text, lang) {
-  if (!ttsEnabled || !text) return;
-  window.speechSynthesis.cancel(); // Stop any current speech
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = lang.startsWith('vi') ? 'vi-VN' : 'en-US';
-  utter.rate = 0.95;
-  utter.pitch = 1;
-  utter.volume = volume;
-
-  // Try to find a matching voice
-  const voices = window.speechSynthesis.getVoices();
-  const code = lang.startsWith('vi') ? 'vi' : 'en';
-  const match = voices.find(v => v.lang.startsWith(code));
-  if (match) utter.voice = match;
-
-  window.speechSynthesis.speak(utter);
-}
-
-// Load voices
-if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-  window.speechSynthesis.getVoices();
-}
-
-// ===== HANDLERS =====
-function onEnglishResult(text) {
+function switchLanguage(newLang) {
+  if (!isRunning) return;
+  clearTimeout(silenceTimer);
+  currentLang = newLang;
   clearInterim($enPanel);
-  addMessage($enPanel, text, 'original');
-  // Queue translation
-  translateQueue = translateQueue.then(async () => {
-    const translated = await translate(text, 'en', 'vi');
-    addMessage($viPanel, translated, 'translated');
-    speak(translated, 'vi');
-  });
-}
-
-function onVietnameseResult(text) {
   clearInterim($viPanel);
-  addMessage($viPanel, text, 'original');
-  translateQueue = translateQueue.then(async () => {
-    const translated = await translate(text, 'vi', 'en');
-    addMessage($enPanel, translated, 'translated');
-    speak(translated, 'en');
-  });
-}
-
-function addMessage(panel, text, type) {
-  const div = document.createElement('div');
-  div.className = 'msg ' + type;
-  div.textContent = text;
-  panel.appendChild(div);
-  if (autoScroll) panel.scrollTop = panel.scrollHeight;
-  // Keep max 50 messages
-  while (panel.children.length > 50) {
-    panel.removeChild(panel.firstChild);
-  }
+  $modeLabel.textContent = newLang === 'en' ? 'Listening: English → Tiếng Việt' : 'Đang nghe: Tiếng Việt → English';
+  createAndStartRecognizer(newLang);
 }
 
 // ===== START / STOP =====
 function startAll() {
   isRunning = true;
   $mainBtn.classList.add('active');
-
-  enRecognizer = createRecognizer(EN_LANG, $enPanel, $enDot, $enWave, onEnglishResult);
-  viRecognizer = createRecognizer(VI_LANG, $viPanel, $viDot, $viWave, onVietnameseResult);
-
-  try { enRecognizer.start(); } catch(e) { console.error('EN start error:', e); }
-  try { viRecognizer.start(); } catch(e) { console.error('VI start error:', e); }
+  lastSpeechTime = Date.now();
+  currentLang = 'en';
+  $modeLabel.textContent = 'Listening: English → Tiếng Việt';
+  createAndStartRecognizer('en');
 }
 
 function stopAll() {
@@ -567,12 +592,14 @@ function stopAll() {
   $viDot.classList.remove('listening');
   $enWave.classList.remove('active');
   $viWave.classList.remove('active');
-
-  if (enRecognizer) { try { enRecognizer.stop(); } catch(e) {} enRecognizer = null; }
-  if (viRecognizer) { try { viRecognizer.stop(); } catch(e) {} viRecognizer = null; }
+  clearTimeout(silenceTimer);
+  if (recognizer) { try { recognizer.stop(); } catch(e) {} recognizer = null; }
   window.speechSynthesis.cancel();
   clearInterim($enPanel);
   clearInterim($viPanel);
+  $langDetect.textContent = 'Tap mic to start';
+  $langDetect.className = 'detected';
+  $modeLabel.textContent = 'Alternating: EN → VI → EN...';
 }
 
 $mainBtn.addEventListener('click', () => {
@@ -597,19 +624,6 @@ function clearAll() {
   $viPanel.innerHTML = '';
   translateQueue = Promise.resolve();
 }
-
-// ===== HEADPHONE / SPEAKER DETECTION =====
-// Show a subtle hint if wired headphones detected (via Web Audio API)
-async function checkAudioOutput() {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
-    if (audioOutputs.length > 1) {
-      console.log('Multiple audio outputs available:', audioOutputs.map(d => d.label));
-    }
-  } catch (e) {}
-}
-checkAudioOutput();
 </script>
 </body>
 </html>
